@@ -5,6 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#2C3E50">
 
+    <!-- Google Ads tag: AW-18547855014 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=AW-18547855014"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'AW-18547855014');
+    </script>
+
+    <!-- Google Ads conversion: outgoing contact click -->
+    <script>
+        function gtag_report_conversion(url) {
+            var navigated = false;
+            var callback = function () {
+                if (typeof url !== 'undefined' && url && !navigated) {
+                    navigated = true;
+                    window.location.href = url;
+                }
+            };
+
+            if (typeof gtag === 'function') {
+                gtag('event', 'conversion', {
+                    'send_to': 'AW-18547855014/0uRZCLjxw68dEKadp4xF',
+                    'event_callback': callback,
+                    'event_timeout': 1200
+                });
+            } else {
+                // Continue to the intended link if Google scripts are blocked.
+                callback();
+            }
+
+            // Fallback ensures calling or WhatsApp still works if the tag is blocked/slow.
+            if (typeof url !== 'undefined' && url) {
+                setTimeout(callback, 1300);
+            }
+            return false;
+        }
+    </script>
+
+
     <!-- Structured data -->
     <script type="application/ld+json">
     {
@@ -1076,19 +1116,21 @@
         const SITE_PHONE_INTL = '+965' + SITE_PHONE;
         const SITE_WHATSAPP = 'https://wa.me/965' + SITE_PHONE;
 
-        // Directly open the native dialer from the button click.
-        function makePhoneCall() {
-            window.location.href = 'tel:' + SITE_PHONE_INTL;
-            return false;
+        // Track the outbound phone click before opening the dialer.
+        function makePhoneCall(phoneNumber) {
+            const raw = String(phoneNumber || SITE_PHONE).replace(/[\s\-()]/g, '');
+            const number = raw.startsWith('+') ? raw
+                : raw.startsWith('965') ? '+' + raw : '+965' + raw;
+            return gtag_report_conversion('tel:' + number);
         }
 
-        // Open WhatsApp immediately, preserving compatibility with mobile browsers.
+        // Track WhatsApp clicks. Navigate in the same tab for reliable conversion callback.
         function trackWhatsAppClick(url) {
-            window.open(url || SITE_WHATSAPP, '_blank', 'noopener,noreferrer');
-            return false;
+            return gtag_report_conversion(url || SITE_WHATSAPP);
         }
 
-        // Send the entered request details via WhatsApp; no misleading success alert.
+        // A valid form opens a prefilled WhatsApp message. This event tracks intent,
+        // not proof that a WhatsApp message was sent or that a booking was completed.
         document.getElementById('contactForm').addEventListener('submit', function (event) {
             event.preventDefault();
             if (!this.reportValidity()) return;
@@ -1105,7 +1147,7 @@
                 fields.filter(([, value]) => String(value || '').trim())
                     .map(([key, value]) => key + ': ' + String(value).trim()).join('\n');
             const url = SITE_WHATSAPP + '?text=' + encodeURIComponent(message);
-            window.location.href = url;
+            return gtag_report_conversion(url);
         });
 
         function toggleFaq(element) {
